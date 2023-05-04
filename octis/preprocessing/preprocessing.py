@@ -288,7 +288,7 @@ class Preprocessing:
                                          stop_words=self.stopwords)
 
         vectorizer.fit_transform(docs)
-        vocabulary = vectorizer.get_feature_names()
+        vocabulary = vectorizer.get_feature_names_out()
         return vocabulary
 
     '''
