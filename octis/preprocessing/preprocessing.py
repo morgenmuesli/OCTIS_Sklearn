@@ -123,7 +123,7 @@ class Preprocessing:
         else:
             # if custom list is specified, then we do not use spacy stopwords
             if type(stopword_list) == list:
-                stopwords = set(stopword_list)
+                stopwords = list(set(stopword_list))
                 self.remove_stopwords_spacy = False
             elif self.remove_stopwords_spacy:
                 assert stopword_list == language
