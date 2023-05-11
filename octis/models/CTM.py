@@ -21,7 +21,8 @@ class CTM(AbstractModel):
         solver='adam', num_epochs=100, reduce_on_plateau=False, prior_mean=0.0,
         prior_variance=None, num_layers=2, num_neurons=100, seed=None,
         use_partitions=True, num_samples=10, inference_type="zeroshot",
-            bert_path="", bert_model="bert-base-nli-mean-tokens"):
+            bert_path="", bert_model="bert-base-nli-mean-tokens",
+            bow_data=None):
         """
         initialization of CTM
 
@@ -76,6 +77,7 @@ class CTM(AbstractModel):
         self.hyperparameters["num_layers"] = num_layers
         self.hyperparameters["bert_model"] = bert_model
         self.hyperparameters["seed"] = seed
+        self.hyperparameters['bow_data'] = bow_data
         self.use_partitions = use_partitions
 
         hidden_sizes = tuple([num_neurons for _ in range(num_layers)])
@@ -144,7 +146,8 @@ class CTM(AbstractModel):
                 self.vocab, train=data_corpus,
                 bert_train_path=(
                     self.hyperparameters['bert_path'] + "_train.pkl"),
-                bert_model=self.hyperparameters["bert_model"])
+                bert_model=self.hyperparameters["bert_model"],
+                bow_train=self.hyperparameters['bow_data'])
 
         self.model = ctm.CTM(
              input_size=input_size, bert_input_size=x_train.X_bert.shape[1], model_type='prodLDA',
@@ -195,18 +198,25 @@ class CTM(AbstractModel):
 
     @staticmethod
     def preprocess(
-        vocab, train, bert_model, test=None, validation=None,
+        vocab, train,bow_train, bert_model, test=None, validation=None,
             bert_train_path=None, bert_test_path=None, bert_val_path=None):
+        
         vocab2id = {w: i for i, w in enumerate(vocab)}
         vec = CountVectorizer(
-            vocabulary=vocab2id, token_pattern=r'(?u)\b[\w+|\-]+\b')
+                vocabulary=vocab2id, token_pattern=r'(?u)\b[\w+|\-]+\b')
         entire_dataset = train.copy()
         if test is not None:
             entire_dataset.extend(test)
         if validation is not None:
             entire_dataset.extend(validation)
 
-        vec.fit(entire_dataset)
+        
+        if(bow_train):
+            print("Found bow data, using it for training...")
+            vec = CountVectorizer()
+            vec.fit(train)
+        else:
+            vec.fit(entire_dataset)
         idx2token = {v: k for (k, v) in vec.vocabulary_.items()}
 
         x_train = vec.transform(train)
